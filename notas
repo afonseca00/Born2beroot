@@ -1,0 +1,254 @@
+*Como a funciona Virtual machine?
+--> E um computador executado dentro de um software, ou seja,
+	um computador virtual dentro de um computador fisico.
+
+*Qual a diferenca entre rocky e debian?
+-->A principal diferenca e que o debian recebe atualizacoes constantes
+o tornando mais instavel em comparacao com o rocky(sucessor do centOS)
+que por sua vez, tem a estabilidade como maior qualidade sendo por isso,
+escolhido como sistema por grande parte das empresas.
+Rocky Linux tem como objetivo atender às necessidades de negócios e organizações, enquanto Debian tem como objetivo fornecer um sistema operacional completo para uso geral.
+
+*Sistema escolhido
+-->debian, por ser mais simples de usar, mais facil de instalar e configurar
+
+*Qual a finalidade da maquina virtual?
+-->Com uma maquina virtual conseguimos instalar um sistema operacional dentro de outro 
+sistema operacional, sendo otimo para testar programas ou novos sistemas operacionais 
+sem trazer problemas para o computador real.
+
+*Qual a diferenca entre apt e aptitude?
+-->O Aptitude e um gerenciador de pacotes de alto nivel, enquanto o apt 
+e de nivel inferior. O  Apt por ser de nivel inferior e restrito a uma
+linha de codigo, ja o aptitude tem um inteface interativa com opcao
+de operacao de linha de comando.
+
+*O que e o Apparmor?
+-->e um modulo de seguranca que permite ao admistrador restringir 
+os recursos dos programas. Appamor bloqueia processos vulneraveis, 
+evitando possiveis danos.
+
+*ver se pw segue a politica exigida.
+sudo chage -l username  
+
+*ver o sistema escolhido.
+--> lsb_release -a || cat /etc/os-release 
+
+*ver o user.
+--> getent group sudo
+	getent group user42
+		
+*Como criar um novo user?
+--> sudo adduser username (criar um novo user)
+	sudo chage -l username (info da password)
+	sudo adduser username sudo (add no sudo group)
+	sudo adduser username user42 (add no user42 group)
+
+*****************************************
+*criar novo user
+sudo adduser new_username
+*meter uma pw
+getent group sudo
+*meter novo usuario no grupo
+sudo groupadd evaluating
+sudo usermod -aG evaluating 
+your_new_username
+*verificar
+getent group evaluating
+*******************************************
+
+*Como mudar o Hostname?
+->sudo hostnamectl > como ver
+--> sudo nano /etc/hostname
+
+*mudar host
+sudo hostnamectl set-hostname 
+new_hostname
+sudo reboot
+
+*retaurar a maquina para o nome original
+sudo hostnamectl set-hostname 
+new_hostname
+sudo reboot
+
+*ver partições
+lsblk
+
+*O que é LVM?
+-->LVM(logical volume maneger) é uma metodo de alocaçao de espaço,
+	tem como função gerar camadas de volume lógico entre sistema operacional e disco rígido.
+	
+*ver se sudo
+dpkg -l | grep sudo
+*qualquer coisa do sudo
+sudo visudo ls
+ 
+UFW
+*ver se UFW esta ativo
+sudo ufw status
+	O ufw e a versao simplificada do iptables
+*Como add e remover a port 8080?
+--> sudo ufw allow 8080 (add a port 8080)
+	sudo ufw status (confirmar)
+	sudo ufw deny 8080 (rm port 8080)
+	
+
+	
+
+*ver se o ssh esta ativo.
+ --> sudo service ssh status (port 4242)
+	ssh e um protocolo de rede criptografico para 
+	operacao de servicos de forma segura em redes inseguras
+*ir atraves do novo usuario
+ssh new_user@127.0.0.1 -p 4242
+*ir atraves do root
+ssh afonseca42@127.0.0.1 -p 4242 (deve aparecer denied)
+
+
+
+|***************************************|
+| 1) lsblk                              1 <- Check partitions
+| 2) sudo aa-status                     2 <- AppArmor status
+| 3) getent group sudo                  3 <- sudo group users
+| 4) getent group user42                4 <- user42 group users
+| 5) sudo service ssh status            5 <- ssh status, yep
+| 6) sudo ufw status                    6 <- ufw status
+| 7) ssh username@ipadress -p 4242      7 <- connect to VM from your host (physical) machine via SSH
+| 8) nano /etc/sudoers.d/<filename>     8 <- yes, sudo config file. You can $ ls /etc/sudoers.d first
+| 9) nano /etc/login.defs               9 <- password expire policy
+| 10) nano /etc/pam.d/common-password  10 <- password policy
+| 11) sudo crontab -l                  11 <- cron schedule
+|***************************************|
+
+/*
+sudo nano /etc/login.defs
+sudo nano /etc/pam.d/common-password
+	Find password requisite pam_quality.so retry=3 and write this 
+	ucredit=-1(é preciso pelo menos de uma letra maiuscula na pw)
+	lcredit=-1(é preciso pelo menos de uma letra minuscula na pw)
+	dcredit=-1(é preciso pelo menos um digito na pw)
+	minlen=10(comprimento minimo pw)
+	maxrepeat=3(maximo de caractares iguais consecutivos pw)
+	usercheck=0(se a pw conter o usarname)
+	difok=7(numero minimo de caracteres que devem ser digitados)
+*/
+
+*script	
+Script é inserido no monitoring .sh de monitoramento para exibir informações do sistema
+cd /usr/local/bin && nano monitoring.sh
+
+*O que é Cron?
+--> É um gerenciador de tarefas que pode ser usado para agendar tarefas,
+para serem executadas periodicamente, em determinada hora, etc.
+
+*Como alterar o timer do script?
+-->sudo crontab -u root -e (***altere o valor de 10 para 1***)
+*como alterar para de 30 em 30 seg?
+ */1 * * * * /path/to/monitoring.sh              
+*/1 * * * * sleep 30s && /path/to/monitoring.sh 
+
+*reiniciar a vm para ver cron
+sudo cronstop
+sudo cronstart
+*para parar o scrip é remover a seguinte linha
+@reboot /path/to/monitoring.sh
+
+*se ao inicializar o script não estiver no mesmo local
+sudo reboot
+sudo crontab -u root -e
+
+				!!!!!1-__-EXPLICAÇAO DO SCRIPT-__-!!!!!!!
+
+
+#!/bin/bash ----Todo o comando bash começa assim---
+
+arch=$(uname -a) 
+*-*"uname -a" é usado para apanhar a arquitetura, "uname" é usado para mostrar certas informaçoes do sistema.
+	"-a" serve para printar todas as informações.*-*
+
+phyproc=$(grep "physical id" /proc/cpuinfo | sort | uniq | wc -l)
+*-*codigo usado para listar o numero de gpus fisicas que podemos usar.*-*
+
+virtproc=$(grep "^processor" /proc/cpuinfo | wc -l)
+*-*comando para listar quantos processos virtuais tenho e posso usar*-*
+
+ram_free=$(free -m | grep Mem | awk '{print $4}')
+*-*codigo para mostrar quanto de ram estou a usar, "free -m" para ver a ram, "-m" para mostrar em MB,
+"grep mem" para mostrar apenas a linha da MEM, "awk '{print $4}'" para printar a memoria que se encontra na 4 coluna.
+"awk" é uma linguagem de programação que permite a manipulação de textos a partir de sequências de padrões.*-*
+
+ram_total=$(free -m | grep Mem | awk '{print $2}')
+*-*usado para ver o total de memoria, mesmo codigo que o de cima mas com a coluna $2*-*
+
+ram_usage_percent=$(free -m | grep Mem | awk '{printf("%.2f"), $3/$2*100}')
+*-*codigo para printar memoria em percentagem, tem a conta para converter em percentagem no fim do codigo.*-*
+
+free_disk=$(df -Bm | grep '^/dev/' | grep -v '/boot$' | awk '{fdisk += $4} END {print fdisk}')
+*-*codigo para ver espaco livre do disco, "df" mostra o meu espaço no disco, "-B" para ver o tamanho do bloco
+que vamos pedir, "-m" mostrar em MB,  "grep '^/dev/'" escolher a linha "dev", "grep -v '/boot$'" para não apanhar 
+a linha do "boot" (pq nao temos acesso porque nao podemos apagar nem deletar nada de la), "-v" para nao selecionar uma
+linha em especifico e o "$" para selecionar o fim da linha, "awk '{fdisk += $4} END {print fdisk}'" para printar
+as 3 linhas (home, boot system, dev) criamos a variavel "fdisk" e usamos o AWk para printar começando da coluna "$4"
+ate o fim "END {print fdisk".*-*
+
+total_disk=$(df -Bg | grep '^/dev/' | grep -v '/boot$' | awk '{tdisk += $2} END {print tdisk}')
+*-* comando para printar o total do disco, mudamos apenas o "-m" por "-Bg" para printar em GB, a coluna "$2"e o nome
+da variavel "tdisk"*-*
+
+disk_usage_percent=$(df -Bm | grep '^/dev/' | grep -v '/boot$' | awk '{fdisk += $3} {tdisk += $2} END {printf("%.2f"), fdisk/tdisk*100}')
+*-*mostrar em percentagem, é o mesmo codigo com a conta no fim.*-*
+
+proc_usage_percent=$(top -bn1 | grep '^%Cpu' | awk '{printf("%.1f%%"), $2}')
+*-* usado para mostra o uso da CPU em %, o comando "top" ja faz isso, a flag "-b"para inicar no modo batch modo
+(executa tarefas automaticamente, sem a presença do user), "-n numero X" especifica o numerro maximo de interações
+ou frames produzidos pelo top. "grep '^%Cpu'" para selecionar qual linha queremos (%Cpu), coluna "$2", queremos 
+a percentagem em decimal e printar awk "{printf("%.1f%%"), $2}"*-*
+
+last_boot=$(who -b | awk '{print $3 " " $4}')
+*-*comando para mostrar a data e hora do ultimo reboot, o comando "who" printa a informação sobre os users logados
+a flag "-b" mostra a hora do ultimo reboot, para apanharmos o resto da informação necessaria damos as colunas "$3 $4"
+mas para printar temos q colocar "" no meio "{print $3 " " $4}".
+
+lvm_active=$(lsblk | grep 'lvm' | awk '{if ($1) {printf "\033[0;32mYes\033[0m";exit} else {print "\033[0;031mNo\033[0m";exit;}}')
+*-*para mostrar se o lvm está ativo ou não, executamos o "lsblk" para ver as partições e selecionamos a coluna do lvm
+se estiver ativo o codigo retornará "yes" ou "nao". os numeros antes e depois servem para dar cor ao output
+""\033[0;32mYes\033[0m";exit"*-*
+
+n_active_connect=$(ss -t | grep ESTAB | wc -l)
+*-*usado para mostra o numero de conecções, "ss" é uma ferramenta que exibe informações sobre o soquete de rede
+(pontofinal de um fluxo de comunicaçao entre processos atravez de uma rede de computadores), "-t" usamos para listar
+apenas as conecções Tcp, vamos usar "grep ESTAB" para mostrar as coencções conectadas e para printar o numero de 
+linhas usamos o "wc", "-l"para printar so as newlines.*-* 
+
+n_users_server=$(who | cut -d " " -f 1 | sort -u | wc -l)
+*-*comando para contar o numero de novas linhas, vamos correr o comando "who", "cut -d " "" para cortar ate o primeiro
+espaço, e usamos a flag -f para selcionar os ficheiros e add 1, usamos "sort -u" para contar o mesmo user e o "wc -l"
+para contar todas as linhas de user.*-*
+
+ipv4=$(hostname -I)
+*-*o "hostname" mostra o nome DNS do sistema e com a flag "-I" mostra todos os endereços do host.*-*
+
+mac=$(ip link show | grep ether | awk '{print $2}')
+*-*para encontrar o "mac"(contole de acesso de midea) usamos "ip" e mostra /manipulate routing, network device, 
+interface and tunnels, com o objeto "link show" mostra o network device, "grep ether" para irmos ao local 
+onde está localizado o MAC e selecionamos a segunda coluna "$2".*-*
+
+n_commands_sudo=$(journalctl _COMM=sudo | grep COMMAND | wc -l)
+*-*usamos o "sudo apt instal net-tools" para ter acesso ao journalctl usado para ter acesso aos conteudos do systemd(1)
+adicionamos "_COMM" para conrresponder com o nome do script (sudo), apanhamos nos comandos que precisamos "grep COMMAND"
+e contamos o numero de comandos "wc -l".*-*
+
+
+("wall" é utilizado para passar uma mensagem a todos os user logados)
+wall  #Architecture: $arch
+        #CPU physical: $phyproc
+        #vCPU: $virtproc
+        #Memory Free: ${ram_free}MB/${ram_total}MB ($ram_usage_percent%)
+        #Disk Free: ${free_disk}MB/${total_disk}GB ($disk_usage_percent%)
+        #CPU load: $proc_usage_percent
+        #Last boot: $last_boot
+        #LVM use: $lvm_active
+        #Connections TCP: $n_active_connect ESTABLISHED
+        #User log: $n_users_server
+        #Network: IP $ipv4 ($mac)
+        #Sudo: $n_commands_sudo cmd"
